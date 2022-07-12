@@ -8,14 +8,6 @@
  * - Điều hướng tới page return để hiển thị nhanh kết quả thanh toán
  * - Call webhook của KH để hỗ trợ cập nhật dữ liệu
  *
- * IPN URL: Ghi nhận kết quả thanh toán từ VNPAY
- * Các bước thực hiện:
- * Kiểm tra checksum
- * Tìm giao dịch trong database
- * Kiểm tra số tiền giữa hai hệ thống
- * Kiểm tra tình trạng của giao dịch trước khi cập nhật
- * Cập nhật kết quả vào Database
- * Trả kết quả ghi nhận lại cho VNPAY
  **/
 
 require_once("./functions.php");

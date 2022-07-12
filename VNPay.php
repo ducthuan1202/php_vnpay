@@ -151,7 +151,18 @@ class VNPay
 
     /**
      * VNPAY sẽ call tới đây và lấy response để cập nhật cho payment transaction
-     * do đó, cần chú ý trả đúng các mã lỗi theo mô tả
+     * do đó, cần chú ý trả đúng các mã lỗi theo mô tả.
+     * Hiện tại, khi đăng ký tài khoản sanbox, chưa thấy VNPAY cho phép đăng ký link này
+     * khi đăng ký tài khoản production có thể sẽ sẽ có
+     *
+     * IPN URL: Ghi nhận kết quả thanh toán từ VNPAY
+     * Các bước thực hiện:
+     * Kiểm tra checksum
+     * Tìm giao dịch trong database
+     * Kiểm tra số tiền giữa hai hệ thống
+     * Kiểm tra tình trạng của giao dịch trước khi cập nhật
+     * Cập nhật kết quả vào Database
+     * Trả kết quả ghi nhận lại cho VNPAY
      *
      * @param $data
      * @return false|string

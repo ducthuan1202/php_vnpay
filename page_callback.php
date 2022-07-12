@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Status page
+ * Quick view result page
+ *
  * Đây là trang hiển thị nhanh kết quả thanh toán cho người dùng xem
  * không nên dùng page này để tính toán hay cập nhật thông tin liên quan tới thanh toán
  * Mà hãy sử dụng page_confirm hay page IPN (webhook) để thực hiện
@@ -13,10 +14,6 @@ require_once("./VNPay.php");
 
 $vnpay = new VNPay();
 $vnpayResponse = $vnpay->parse($_GET);
-
-if($vnpayResponse->isValid()){
-    // làm gì ở đây thì làm!!!
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">

@@ -15,9 +15,6 @@ $resp = null;
 if (array_key_exists("order_id", $_POST)) {
     $vnpay = new VNPay();
     $resp = $vnpay->tracking($_POST);
-    header('content-type: text/plain');
-    var_export($resp);
-    exit();
 }
 ?>
 <html lang="en">
