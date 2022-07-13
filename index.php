@@ -1,11 +1,12 @@
 <?php
 
+
 /**
  * Create Payment page
  *
  * Đây là trang demo thanh toán với VNPAY
  * Sau khi submit, trang sẽ được điều hướng tới VNPAY để thực hiện tao thác thanh toán
- * khi hoàn tất, sẽ chuyển lại về trang page_callbac.php để hiển thị kết quả
+ * khi hoàn tất, sẽ chuyển lại về trang page_callback.php để hiển thị kết quả
  */
 
 require_once("./functions.php");

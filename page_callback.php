@@ -5,7 +5,6 @@
  *
  * Đây là trang hiển thị nhanh kết quả thanh toán cho người dùng xem
  * không nên dùng page này để tính toán hay cập nhật thông tin liên quan tới thanh toán
- * Mà hãy sử dụng page_confirm hay page IPN (webhook) để thực hiện
  */
 
 require_once("./functions.php");

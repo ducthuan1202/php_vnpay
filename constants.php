@@ -15,5 +15,5 @@ const VNPAY_MERCHANT_URL = "http://sandbox.vnpayment.vn/merchant_webapi/merchant
 // đây là trang chuyển hướng sau khi VNPay hoàn tất thanh toán
 const VNPAY_URL_CALLBACK = "http://localhost/vnpay/page_callback.php";
 
-// trang xác nhận thông tin thanh toán (webhook để VNPay gọi tới)
-const IPN_URL = "http://localhost/vnpay/page_confirm.php";
+// webhook - để nhận thông tin thanh toán sau khi hoàn tất
+const VNPAY_WEBHOOK_IPN_URL = "http://localhost/vnpay/page_confirm.php";

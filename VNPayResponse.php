@@ -19,8 +19,7 @@ class VNPayResponse
         $inputData = filterVNPayParams($data);
         unset($inputData['vnp_SecureHash']);
 
-        $data = buildHashAndQuery($inputData);
-        $hashData = $data[0];
+        $hashData = buildHashQuery($inputData);
         $secureHash = hash_hmac(VNPAY_ALGORITHM, $hashData, VNPAY_SECRET_KEY);
 
         $this->success = getValueByKeyFromArray($inputData, 'vnp_ResponseCode') === VNPayResponseCode::SUCCESS;
@@ -41,32 +40,57 @@ class VNPayResponse
     public function getAmount()
     {
         $amount = getValueByKeyFromArray($this->response, 'vnp_Amount', 0);
-        return (int)$amount / 100;
+        return getAmountFromVNPay($amount);
     }
 
     public function getBankCode()
     {
-        return getValueByKeyFromArray($this->response, 'vnp_BankCode', '');
+        return getValueByKeyFromArray($this->response, 'vnp_BankCode');
     }
 
     public function getBankTransactionNumber()
     {
-        return getValueByKeyFromArray($this->response, 'vnp_BankTranNo', '');
-    }
-
-    public function getTransactionNumber()
-    {
-        return getValueByKeyFromArray($this->response, 'vnp_TransactionNo', '');
+        return getValueByKeyFromArray($this->response, 'vnp_BankTranNo');
     }
 
     public function getCartType()
     {
-        return getValueByKeyFromArray($this->response, 'vnp_CardType', '');
+        return getValueByKeyFromArray($this->response, 'vnp_CardType');
+    }
+
+    public function getResponseCode()
+    {
+        return getValueByKeyFromArray($this->response, 'vnp_ResponseCode');
+    }
+
+    public function getOrderID()
+    {
+        return getValueByKeyFromArray($this->response, 'vnp_TxnRef');
+    }
+
+    public function getOrderInfo()
+    {
+        return getValueByKeyFromArray($this->response, 'vnp_OrderInfo');
+    }
+
+    public function getTmnCode()
+    {
+        return getValueByKeyFromArray($this->response, 'vnp_TmnCode');
+    }
+
+    public function getPayDate()
+    {
+        return getValueByKeyFromArray($this->response, 'vnp_PayDate');
+    }
+
+    public function getTransactionNumber()
+    {
+        return getValueByKeyFromArray($this->response, 'vnp_TransactionNo');
     }
 
     public function getTransactionStatus()
     {
-        return getValueByKeyFromArray($this->response, 'vnp_ResponseCode', '');
+        return getValueByKeyFromArray($this->response, 'vnp_ResponseCode');
     }
 
     public function getTransactionStatusText()
@@ -74,28 +98,13 @@ class VNPayResponse
         return VNPayResponseCode::getStatusText($this->getTransactionStatus());
     }
 
-    public function getStatusCode()
+    public function getSecureHashType()
     {
-        return getValueByKeyFromArray($this->response, 'vnp_ResponseCode', '');
+        return getValueByKeyFromArray($this->response, 'vnp_SecureHashType');
     }
 
-    public function getOrderID()
+    public function getSecureHash()
     {
-        return getValueByKeyFromArray($this->response, 'vnp_TxnRef', '');
-    }
-
-    public function getOrderInfo()
-    {
-        return getValueByKeyFromArray($this->response, 'vnp_OrderInfo', '');
-    }
-
-    public function getTmnCode()
-    {
-        return getValueByKeyFromArray($this->response, 'vnp_TmnCode', '');
-    }
-
-    public function getPayDate()
-    {
-        return getValueByKeyFromArray($this->response, 'vnp_PayDate', '');
+        return getValueByKeyFromArray($this->response, 'vnp_SecureHash');
     }
 }

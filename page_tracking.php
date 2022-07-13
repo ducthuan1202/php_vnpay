@@ -3,9 +3,8 @@
 /**
  * Tracking page
  *
- * Đây là page mà VNPAY sẽ call tới với dũ liệu sau khi hoàn tất thanh toán
- * chỗ này chính là nơi để cập nhật đơn hàng, trạng thái thanh toán, ...
- * hay bất kỳ xử lý logic nào liên quan tới thanh toán VNPAY trả về
+ * truy vấn thông tin thanh toán theo đơn hàng
+ * hiện tại, response VNPAY trả về đang lỗi...
  */
 require_once("./functions.php");
 require_once("./constants.php");

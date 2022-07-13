@@ -1,7 +1,7 @@
 <?php
 
 /**
- * VNPayQueryCode class
+ * VNPayIPNCode class
  */
 class VNPayIPNCode
 {

@@ -23,13 +23,17 @@ class VNPay
 
     private function buildEndpoint($url, $inputData)
     {
-        list($hash, $query) = buildHashAndQuery($inputData);
-        $endpoint = $url . "?" . $query;
-        $vnpSecureHash = hash_hmac(VNPAY_ALGORITHM, $hash, VNPAY_SECRET_KEY);
-        $endpoint .= 'vnp_SecureHash=' . $vnpSecureHash;
-        return $endpoint;
+        $query = buildHashQuery($inputData);
+        $vnpSecureHash = hash_hmac(VNPAY_ALGORITHM, $query, VNPAY_SECRET_KEY);
+
+        $inputData['vnp_SecureHash'] = $vnpSecureHash;
+        $query = buildHashQuery($inputData);
+        return $url . '?' .$query;
     }
 
+    /**
+     * @return stdClass
+     */
     private function mockFindOrderFromDatabase()
     {
         return null;
@@ -40,79 +44,71 @@ class VNPay
         // do something
     }
 
+    /**
+     * Tạo giao dịch
+     *
+     * @param $data
+     */
     public function payment($data)
     {
         $startTime = date("YmdHis");
         $expire = date('YmdHis', strtotime('+15 minutes', strtotime($startTime)));
 
-        $vnp_TxnRef = getValueByKeyFromArray($data, 'order_id');
-        $vnp_OrderInfo = getValueByKeyFromArray($data, 'order_desc');
-        $vnp_OrderType = getValueByKeyFromArray($data, 'order_type');
-        $vnp_Amount = (int)getValueByKeyFromArray($data, 'amount', 0) * 100;
-        $vnp_Locale = getValueByKeyFromArray($data, 'language');
-        $vnp_BankCode = getValueByKeyFromArray($data, 'bank_code');
-        $vnp_IpAddr = getValueByKeyFromArray($_SERVER, 'REMOTE_ADDR');
-
-        // Add Params of 2.0.1 Version
-        $vnp_ExpireDate = getValueByKeyFromArray($data, 'txtexpire', $expire);
-
-        // Thông tin hóa đơn (Billing)
-        $vnp_Bill_Mobile = getValueByKeyFromArray($data, 'txt_billing_mobile');
-        $vnp_Bill_Email = getValueByKeyFromArray($data, 'txt_billing_email');
         $fullName = trim(getValueByKeyFromArray($data, 'txt_billing_fullname'));
-        if (isset($fullName) && trim($fullName) != '') {
+        $vnpBillFirstName = "";
+        $vnpBillLastName = "";
+        if (!empty($fullName)) {
             $name = explode(' ', $fullName);
-            $vnp_Bill_FirstName = array_shift($name);
-            $vnp_Bill_LastName = array_pop($name);
+            $vnpBillFirstName = array_shift($name);
+            $vnpBillLastName = array_pop($name);
         }
-        $vnp_Bill_Address = getValueByKeyFromArray($data, 'txt_inv_addr1');
-        $vnp_Bill_City = getValueByKeyFromArray($data, 'txt_bill_city');
-        $vnp_Bill_Country = getValueByKeyFromArray($data, 'txt_bill_country');
-        $vnp_Bill_State = getValueByKeyFromArray($data, 'txt_bill_state');
 
-        // Thông tin gửi Hóa đơn điện tử (Invoice)
-        $vnp_Inv_Phone = getValueByKeyFromArray($data, 'txt_inv_mobile');
-        $vnp_Inv_Email = getValueByKeyFromArray($data, 'txt_inv_email');
-        $vnp_Inv_Customer = getValueByKeyFromArray($data, 'txt_inv_customer');
-        $vnp_Inv_Address = getValueByKeyFromArray($data, 'txt_inv_addr1');
-        $vnp_Inv_Company = getValueByKeyFromArray($data, 'txt_inv_company');
-        $vnp_Inv_Taxcode = getValueByKeyFromArray($data, 'txt_inv_taxcode');
-        $vnp_Inv_Type = getValueByKeyFromArray($data, 'cbo_inv_type');
+        $amount = getValueByKeyFromArray($data, 'amount', 0);
+        $amount = setAmountToVNPay($amount);
         $inputData = array(
-            "vnp_Version" => $this->vnpVersion,
+            "vnp_ReturnUrl" => VNPAY_URL_CALLBACK,
             "vnp_TmnCode" => VNPAY_WEBSITE_ID,
-            "vnp_Amount" => $vnp_Amount,
             "vnp_Command" => self::VNP_COMMAND_PAY,
             "vnp_CreateDate" => date('YmdHis'),
+            "vnp_Version" => $this->vnpVersion,
             "vnp_CurrCode" => $this->vnpCurrCode,
-            "vnp_IpAddr" => $vnp_IpAddr,
-            "vnp_Locale" => $vnp_Locale,
-            "vnp_OrderInfo" => $vnp_OrderInfo,
-            "vnp_OrderType" => $vnp_OrderType,
-            "vnp_ReturnUrl" => VNPAY_URL_CALLBACK,
-            "vnp_TxnRef" => $vnp_TxnRef,
-            "vnp_ExpireDate" => $vnp_ExpireDate,
-            "vnp_Bill_Mobile" => $vnp_Bill_Mobile,
-            "vnp_Bill_Email" => $vnp_Bill_Email,
-            "vnp_Bill_FirstName" => $vnp_Bill_FirstName,
-            "vnp_Bill_LastName" => $vnp_Bill_LastName,
-            "vnp_Bill_Address" => $vnp_Bill_Address,
-            "vnp_Bill_City" => $vnp_Bill_City,
-            "vnp_Bill_Country" => $vnp_Bill_Country,
-            "vnp_Inv_Phone" => $vnp_Inv_Phone,
-            "vnp_Inv_Email" => $vnp_Inv_Email,
-            "vnp_Inv_Customer" => $vnp_Inv_Customer,
-            "vnp_Inv_Address" => $vnp_Inv_Address,
-            "vnp_Inv_Company" => $vnp_Inv_Company,
-            "vnp_Inv_Taxcode" => $vnp_Inv_Taxcode,
-            "vnp_Inv_Type" => $vnp_Inv_Type
+            "vnp_Amount" => $amount,
+            "vnp_IpAddr" => getIP(),
+            "vnp_Locale" => getValueByKeyFromArray($data, 'language'),
+            "vnp_OrderInfo" => getValueByKeyFromArray($data, 'order_desc'),
+            "vnp_OrderType" => getValueByKeyFromArray($data, 'order_type'),
+            "vnp_TxnRef" => getValueByKeyFromArray($data, 'order_id'),
+
+            // Add Params of 2.0.1 Version
+            "vnp_ExpireDate" => getValueByKeyFromArray($data, 'txtexpire', $expire),
+
+            // Thông tin hóa đơn (Billing)
+            "vnp_Bill_Mobile" => getValueByKeyFromArray($data, 'txt_billing_mobile'),
+            "vnp_Bill_Email" => getValueByKeyFromArray($data, 'txt_billing_email'),
+            "vnp_Bill_FirstName" => $vnpBillFirstName,
+            "vnp_Bill_LastName" => $vnpBillLastName,
+            "vnp_Bill_Address" => getValueByKeyFromArray($data, 'txt_inv_addr1'),
+            "vnp_Bill_City" => getValueByKeyFromArray($data, 'txt_bill_city'),
+            "vnp_Bill_Country" => getValueByKeyFromArray($data, 'txt_bill_country'),
+
+            // Thông tin gửi Hóa đơn điện tử (Invoice)
+            "vnp_Inv_Phone" => getValueByKeyFromArray($data, 'txt_inv_mobile'),
+            "vnp_Inv_Email" => getValueByKeyFromArray($data, 'txt_inv_email'),
+            "vnp_Inv_Customer" => getValueByKeyFromArray($data, 'txt_inv_customer'),
+            "vnp_Inv_Address" => getValueByKeyFromArray($data, 'txt_inv_addr1'),
+            "vnp_Inv_Company" => getValueByKeyFromArray($data, 'txt_inv_company'),
+            "vnp_Inv_Taxcode" => getValueByKeyFromArray($data, 'txt_inv_taxcode'),
+            "vnp_Inv_Type" => getValueByKeyFromArray($data, 'cbo_inv_type')
         );
 
-        if (isset($vnp_BankCode) && $vnp_BankCode != "") {
-            $inputData['vnp_BankCode'] = $vnp_BankCode;
+        $vnpBankCode = getValueByKeyFromArray($data, 'bank_code');
+        if (!empty($vnpBankCode)) {
+            $inputData['vnp_BankCode'] = $vnpBankCode;
         }
-        if (isset($vnp_Bill_State) && $vnp_Bill_State != "") {
-            $inputData['vnp_Bill_State'] = $vnp_Bill_State;
+
+        $vnpBillState = getValueByKeyFromArray($data, 'txt_bill_state');
+        if (!empty($vnpBillState)) {
+            $inputData['vnp_Bill_State'] = $vnpBillState;
         }
 
         $endpoint = $this->buildEndpoint(VNPAY_PAYMENT_URL, $inputData);
@@ -128,14 +124,14 @@ class VNPay
     public function tracking($data)
     {
         $inputData = [
-            "vnp_Version" => $this->vnpVersion,
             "vnp_Command" => self::VNP_COMMAND_QUERY,
             "vnp_TmnCode" => VNPAY_WEBSITE_ID,
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_Version" => $this->vnpVersion,
             "vnp_TxnRef" => getValueByKeyFromArray($data, 'order_id'),
             "vnp_OrderInfo" => getValueByKeyFromArray($data, 'order_desc'),
             "vnp_TransDate" => getValueByKeyFromArray($data, 'payment_date'),
-            "vnp_CreateDate" => date('YmdHis'),
-            "vnp_IpAddr" => getValueByKeyFromArray($_SERVER, 'REMOTE_ADDR')
+            "vnp_IpAddr" => getIP()
         ];
 
         $endpoint = $this->buildEndpoint(VNPAY_MERCHANT_URL, $inputData);
@@ -152,8 +148,7 @@ class VNPay
     /**
      * VNPAY sẽ call tới đây và lấy response để cập nhật cho payment transaction
      * do đó, cần chú ý trả đúng các mã lỗi theo mô tả.
-     * Hiện tại, khi đăng ký tài khoản sanbox, chưa thấy VNPAY cho phép đăng ký link này
-     * khi đăng ký tài khoản production có thể sẽ sẽ có
+     *
      *
      * IPN URL: Ghi nhận kết quả thanh toán từ VNPAY
      * Các bước thực hiện:
@@ -169,26 +164,16 @@ class VNPay
      */
     public function confirm($data)
     {
-        $inputData = filterVNPayParams($data);
-        $vnp_SecureHash = getValueByKeyFromArray($inputData, 'vnp_SecureHash');
-        unset($inputData['vnp_SecureHash']);
-
-        $data = buildHashAndQuery($inputData);
-        $hashData = $data[0];
-        $secureHash = hash_hmac(VNPAY_ALGORITHM, $hashData, VNPAY_SECRET_KEY);
-
-        $vnp_Amount = (int)getValueByKeyFromArray($inputData, 'vnp_Amount', 0) / 100;
-        $vnp_ResponseCode = getValueByKeyFromArray($inputData, 'vnp_ResponseCode');
-        $vnp_TransactionStatus = getValueByKeyFromArray($inputData, 'vnp_TransactionStatus');
+        $resp = new VNPayResponse();
+        $resp->computed($data);
 
         // Là trạng thái thanh toán của giao dịch chưa có IPN lưu tại hệ thống của merchant chiều khởi tạo URL thanh toán.
         // 0: chưa có IPN, 1: thành công, 2: thất bại
-        $orderId = getValueByKeyFromArray($inputData, 'vnp_TxnRef');
 
         try {
 
-            // check hash sum
-            if ($secureHash !== $vnp_SecureHash) {
+            // checksum
+            if (!$resp->isValid()) {
                 return json_encode(VNPayIPNCode::buildResponse(VNPayIPNCode::SIGNATURE_INVALID));
             }
 
@@ -199,18 +184,18 @@ class VNPay
             }
 
             // Kiểm tra số tiền thanh toán của giao dịch: giả sử số tiền kiểm tra là đúng.
-            if ($order["Amount"] !== $vnp_Amount) {
+            if ($order->amount !== $resp->getAmount()) {
                 return json_encode(VNPayIPNCode::buildResponse(VNPayIPNCode::AMOUNT_INVALID));
             }
 
             // Kiểm tra trạng thái đơn hàng với IPN status
-            if ($order["ipn_status"] !== 0) {
+            if ($order->ipnStatus !== 0) {
                 return json_encode(VNPayIPNCode::buildResponse(VNPayIPNCode::ORDER_ALREADY_CONFIRMED));
             }
 
-            $isSuccess = $vnp_ResponseCode === VNPayResponseCode::SUCCESS && $vnp_TransactionStatus === VNPayResponseCode::SUCCESS;
+            $isSuccess = $resp->getResponseCode() === VNPayResponseCode::SUCCESS && $resp->getTransactionStatus() === VNPayResponseCode::SUCCESS;
             $statusIPN = $isSuccess ? 1 : 2;
-            $this->mockUpdateOrderStatusIPN($orderId, $statusIPN);
+            $this->mockUpdateOrderStatusIPN($order->id, $statusIPN);
 
             // return success
             return json_encode(VNPayIPNCode::buildResponse(VNPayIPNCode::SUCCESS));
@@ -227,21 +212,24 @@ class VNPay
      */
     public function refund($data)
     {
+        $amount = getValueByKeyFromArray($data, 'amount', 0);
+        $amount = setAmountToVNPay($amount);
         $inputData = array(
+            "vnp_TmnCode" => VNPAY_WEBSITE_ID,
+            "vnp_Command" => self::VNP_COMMAND_REFUND,
+            "vnp_CreateDate" => date('YmdHis'),
             "vnp_Version" => $this->vnpVersion,
             "vnp_TransactionType" => getValueByKeyFromArray($data, 'trantype'),
-            "vnp_Command" => self::VNP_COMMAND_REFUND,
             "vnp_CreateBy" => getValueByKeyFromArray($data, 'mail'),
-            "vnp_TmnCode" => VNPAY_WEBSITE_ID,
             "vnp_TxnRef" => getValueByKeyFromArray($data, 'order_id'),
-            "vnp_Amount" => getValueByKeyFromArray($data, 'amount', 0) * 100,
+            "vnp_Amount" => $amount,
             "vnp_OrderInfo" => getValueByKeyFromArray($data, 'order_desc'),
             "vnp_TransDate" => getValueByKeyFromArray($data, 'payment_date'),
-            "vnp_CreateDate" => date('YmdHis'),
-            "vnp_IpAddr" => getValueByKeyFromArray($_SERVER, 'REMOTE_ADDR'),
+            "vnp_IpAddr" => getIP(),
         );
 
         $endpoint = $this->buildEndpoint(VNPAY_MERCHANT_URL, $inputData);
+
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, 0);
